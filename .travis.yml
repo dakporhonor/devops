@@ -1,0 +1,10 @@
+sudo: required
+
+services:
+  - docker
+
+before_install: 
+  - docker build -t dakporhonor/devops_docker_frontend -f Dockerfile.dev ./docker/frontend
+
+script: 
+  - docker run -e CI=true dakporhonor/devops_docker_frontend npm run test -- --coverage
