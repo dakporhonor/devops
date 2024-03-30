@@ -1,0 +1,11 @@
+version: '3'
+
+services:
+  redis-server:
+    image: 'redis'
+  node-app:
+  # Uses the docker file from our current directory
+    build: .
+    ports:
+     - "4001:3001"
+    restart: on-failure

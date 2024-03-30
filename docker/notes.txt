@@ -1,0 +1,145 @@
+Docker is an ecosystem-> Docker CLI, Docker Server (daemon), Docker Hub ecosystem
+
+Namespacing is a way of isolating resources per process (or group of processes) (linux specific feature)
+
+Control Groups (cgroups) Used to limit the amount of resources used by a process. (linux specific feature)
+
+Resources includes Memory, CPU, HD I/O, Network Bandwith
+
+Images are blueprints of all the information needed to create a Docker Container
+
+Containers are instance of an Image. A Container is a process that has a grouping of resources assigned to it. They are essentially running programs isolated from the system in which they run
+
+When we install Docker, we are technically installing a linux virtual machine. Inside the virtual machine are where the containers are created
+
+Docker CLI
+
+docker create <image name>
+    This creates the container from the image and returns the container includes
+
+docker start -a <container id>
+    This starts the container using the startup command defined in the image
+    the -a (attach the log to the stdout) watch for output and print it out on the terminal
+
+docker run <name of image> <override command>
+    runs a container using the image. we can pass optional override command 
+    This command creates and start the container
+    We can run the container in the background by passing the -d flag
+
+docker ps --all
+    lists all running containers in local machinecl
+
+docker system prune
+    deletes all stopped containers
+
+docker logs <container id>
+    used to inspect a container and see what's going on inside of it
+
+docker stop <container id>
+
+    use to stop container gracefully 
+
+docker kill <container id>
+    use to stop force stop a container without doing cleanup
+
+docker exec -it <container id> <command>
+    use to execute additional command inside a container
+    the -it flag is used to provide input to the container
+    to gain shell acess we can do docker exec -it <container id> sh (or bash if the container have it installed)
+    We can also gain access to shell using docker run -it sh. The downside of this is our program primary run command will not be executed. It is best to use the docker exec -it <container id> sh command. In this case we gain access to an already running container
+
+Dockerfile
+Use to define our image. Dockerfiles generally consists of a base image, run commands to install program dependencies and a command to run on container startup
+
+Example Dockerfile
+
+FROM node:18-alpine
+
+WORKDIR /usr/app
+
+COPY package*.json ./
+
+RUN npm install
+
+# COPY ./ ./
+
+CMD [ "npm","start" ]
+
+
+docker build -t <username>/<image name>:<tag> .
+    used to build an image in dockerhub. the -t indicates the tag of the image. Without tagging the image we can only reference it by it's container id
+    the "." (dot) is the build context. To start a container using the image tag eg: docker run dakporhonor/d-redis:latest. If you did not specify the tag, it always use the latest
+    We can specify the file to use to build the image by using the -f flag: docker build -f Dockerfile.dev .
+
+We can port-forward incoming request when running a container: docker run dakporhonor/simpleweb -p 3000:8080 where 3000 is our local machine port and 8080 is our container port
+
+
+Docker Compose
+
+docker-compose up
+    runs the services (containers)
+    we can run the containers in the background by passing the -d flag 
+
+docker-compose up --build 
+    builds and run the services (containers)
+
+docker-compose down
+    stops the group of containers
+
+Example Docker Compose 
+
+version: '3'
+
+services:
+  react-app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - /usr/app/node_modules
+      - .:/usr/app
+
+
+
+Buildkit for Docker Desktop
+Students who have the most recent versions of Docker will now have Buildkit enabled by default. If so, you will notice a slightly different output in your terminal when building from a Dockerfile.
+
+The most important difference for students will be the final step in the build process. As shown in the lecture the last step would say:
+
+---> fc60771eaa08
+Successfully Built fc60771eaa08
+ 
+Now, with Buildkit, the final step would say:
+
+ => => exporting layers                                                      
+0.0s => => writing image sha256:ee59c34ada9890ca09145cc88ccb25d32b677fc3b61e921  0.0s
+ 
+Both fc60771eaa08 and ee59c34ada9890ca09145cc88ccb25d32b677fc3b61e921 are the resulting image ID's that you would use to run a container.
+
+eg:
+
+docker run fc60771eaa08
+or
+
+docker run ee59c34ada9890ca09145cc88ccb25d32b677fc3b61e921
+
+
+Also, the CMD instruction is now omitted from the visible output. This change is rather unimportant and does not affect the image in any way.
+
+Using the Progress Flag to see more verbose output
+Buildkit will hide away much of its progress which is something the legacy builder did not do. We will be discussing some messages and errors later in Section 4 that will be hidden by default. To see this output, you will want to pass the progress flag to the build command:
+
+docker build --progress=plain .
+
+Additionally, you can pass the no-cache flag to disable any caching:
+
+docker build --no-cache --progress=plain .
+
+Note - Do not try to use the no-cache flag with Lecture 47 Minimizing Cache Busting
+
+Disabling Buildkit to match course output
+To disable Buildkit, you can just pass the following variable to the build command:
+
+DOCKER_BUILDKIT=0 docker build .
